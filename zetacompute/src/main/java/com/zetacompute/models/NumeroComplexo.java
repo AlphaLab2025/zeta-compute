@@ -1,6 +1,8 @@
 package com.zetacompute.models;
 
 import java.util.Objects;
+import com.zetacompute.exceptions.DivisaoPorZeroException;
+import com.zetacompute.exceptions.RaizInvalidaException;
 
 /*
  * Representa um número complexo com parte real e imaginária (real + imaginario * i).
@@ -79,7 +81,7 @@ public final class NumeroComplexo {
         double epsilon = 1e-10; // tolerância para comparação com zero
 
         if (Math.abs(denominador) < epsilon) {
-            throw new ArithmeticException("Divisão por zero não é permitida para números complexos.");
+            throw new DivisaoPorZeroException("Divisão por zero não é permitida para números complexos.");
         }
 
         return new NumeroComplexo(
@@ -124,7 +126,7 @@ public final class NumeroComplexo {
     public NumeroComplexo raiz(int n) {
 
         if (n <= 0) {
-            throw new IllegalArgumentException("O índice da raiz deve ser um número inteiro positivo.");
+            throw new RaizInvalidaException("O índice da raiz deve ser um número inteiro positivo.");
         }
 
         // Cálculo da raiz n-ésima usando a forma polar
