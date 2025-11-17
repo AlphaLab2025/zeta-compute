@@ -76,7 +76,7 @@ public final class NumeroComplexo {
     public NumeroComplexo dividir(NumeroComplexo x) {
         double denominador = x.real * x.real + x.imaginario * x.imaginario; // módulo ao quadrado do número complexo
                                                                             // divisor
-        double epsilon = 1e-10; // tolerância para comparação com zero
+        double epsilon = 1e-9; // tolerância para comparação com zero
 
         if (Math.abs(denominador) < epsilon) {
             throw new ArithmeticException("Divisão por zero não é permitida para números complexos.");
@@ -169,7 +169,7 @@ public final class NumeroComplexo {
             return false;
         }
         NumeroComplexo that = (NumeroComplexo) o;
-        double epsilon = 1e-10;
+        double epsilon = 1e-9;
         return Math.abs(this.real - that.real) < epsilon &&
                 Math.abs(this.imaginario - that.imaginario) < epsilon;
     }
