@@ -12,6 +12,47 @@ public final class NumeroComplexo {
     private final double real;
     private final double imaginario;
 
+/*
+     * Converte uma String (ex: "3", "4i", "3+4i", "3-4i") em um NumeroComplexo.
+     * Necessário para o parser ler a entrada do usuário.
+     */
+    public static NumeroComplexo parse(String s) {
+        s = s.replace(" ", ""); // Remove espaços
+        
+        // Caso simples: apenas "i" ou "-i"
+        if (s.equals("i")) return new NumeroComplexo(0, 1);
+        if (s.equals("-i")) return new NumeroComplexo(0, -1);
+
+        // Regex para separar partes. Ex: pega "-3", "+4i"
+        // Nota: Parsing de complexos é chato, esta é uma implementação simplificada
+        // que assume o formato a+bi ou a ou bi.
+        try {
+            if (s.endsWith("i")) {
+                // Tem parte imaginária
+                int posSinal = Math.max(s.lastIndexOf('+'), s.lastIndexOf('-'));
+                
+                if (posSinal <= 0) { // Apenas imaginário (ex: "4i", "-4i")
+                   String imStr = s.substring(0, s.length() - 1);
+                   if (imStr.equals("+")) imStr = "1";
+                   else if (imStr.equals("-")) imStr = "-1";
+                   return new NumeroComplexo(0, Double.parseDouble(imStr));
+                } else { 
+                   // Real e Imaginário (ex: "3+4i")
+                   double re = Double.parseDouble(s.substring(0, posSinal));
+                   String imStr = s.substring(posSinal, s.length() - 1);
+                   if (imStr.equals("+")) imStr = "1";
+                   else if (imStr.equals("-")) imStr = "-1";
+                   return new NumeroComplexo(re, Double.parseDouble(imStr));
+                }
+            } else {
+                // Apenas Real
+                return new NumeroComplexo(Double.parseDouble(s), 0);
+            }
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Formato de número complexo inválido: " + s);
+        }
+    }
+
     public NumeroComplexo(double real, double imaginario) {
         this.real = real;
         this.imaginario = imaginario;
@@ -92,30 +133,28 @@ public final class NumeroComplexo {
      * (Atende uma parte do Requisito 1)
      */
     // Nota -- Revisar a lógica de potência para garantir que está correta
+/*
+     * Retorna o número complexo elevado à potência inteira x usando a Fórmula de De Moivre.
+     * (Atende Requisito 1 de forma otimizada)
+     */
     public NumeroComplexo potencia(int x) {
+        if (x == 0) return new NumeroComplexo(1, 0);
+        if (real == 0 && imaginario == 0) return new NumeroComplexo(0, 0); // 0^x = 0 (para x>0)
 
-        if (x == 0) {
-            return new NumeroComplexo(1, 0); // qualquer número elevado a 0 é 1
-        }
+        // Converte para polar
+        double modulo = Math.sqrt(real * real + imaginario * imaginario);
+        double angulo = Math.atan2(imaginario, real);
 
-        if (x == 1) {
-            return this; // qualquer número elevado a 1 é ele mesmo
-        }
+        // Aplica a potência
+        double novoModulo = Math.pow(modulo, x);
+        double novoAngulo = angulo * x;
 
-        if (x < 0) {
-            NumeroComplexo inverso = new NumeroComplexo(1, 0).dividir(this); // calcular o inverso
-            NumeroComplexo resultadoInverso = inverso.potencia(-x); // elevar o inverso ao valor positivo de x
-            return resultadoInverso; // retornar o inverso do resultado
-        }
+        // Volta para retangular
+        double novoReal = novoModulo * Math.cos(novoAngulo);
+        double novoImaginario = novoModulo * Math.sin(novoAngulo);
 
-        // Lógica para x > 1
-        NumeroComplexo resultado = this;
-        for (int i = 1; i < x; i++) {
-            resultado = resultado.multiplicar(this);
-        }
-        return resultado;
+        return new NumeroComplexo(novoReal, novoImaginario);
     }
-
     /*
      * Retorna a raiz n-ésima principal do número complexo.
      * (Atende uma parte do Requisito 1)
