@@ -3,6 +3,7 @@ package com.zetacompute.console;
 import com.zetacompute.models.Expressao;
 import com.zetacompute.models.NoConstante;
 import com.zetacompute.models.NoOperacao;
+import com.zetacompute.models.NoResultado;
 import com.zetacompute.models.NoVariavel;
 import com.zetacompute.models.NumeroComplexo;
 import java.util.Scanner;
@@ -11,9 +12,30 @@ import java.util.Map;
 
 public class CalculadoraComplexaConsole {
     private Scanner scanner;
+    private Expressao arvoreOperacoes; // Rastreia a árvore de operações acumuladas do usuário
 
     public CalculadoraComplexaConsole() {
         this.scanner = new Scanner(System.in);
+        this.arvoreOperacoes = null;
+    }
+
+    /**
+     * Acumula operações na árvore, conectando a nova operação com a anterior
+     * Além de conectar a operação, adiciona o resultado como ramo direito
+     */
+    private void acumularOperacao(Expressao novaOperacao, NumeroComplexo resultado) {
+        Expressao noResultado = new NoResultado(resultado);
+        
+        // Cria uma estrutura "Operação -> Resultado" para cada operação
+        Expressao operacaoComResultado = new NoOperacao(novaOperacao, noResultado, NoOperacao.Operador.SOMA);
+        
+        if (arvoreOperacoes == null) {
+            // Primeira operação
+            arvoreOperacoes = operacaoComResultado;
+        } else {
+            // Operações seguintes: conecta a árvore anterior com a nova operação
+            arvoreOperacoes = new NoOperacao(arvoreOperacoes, operacaoComResultado, NoOperacao.Operador.SOMA);
+        }
     }
 
     public void iniciar() {
@@ -41,27 +63,19 @@ public class CalculadoraComplexaConsole {
     }
 
     /**
-     * Monta a mesma árvore usada em `TesteArvore` e a exibe, em seguida avalia
-     * com z = (1 + 1i) e mostra o resultado.
+     * Exibe a árvore de operações capturada durante a sessão do usuário
      */
     private void mostrarArvoreExemplo() {
-        // 1. Criar as folhas
-        Expressao noA = new NoConstante(new NumeroComplexo(2, 5));
-        Expressao noZ = new NoVariavel("z");
-        Expressao no3 = new NoConstante(new NumeroComplexo(3, 0));
+        if (arvoreOperacoes == null) {
+            System.out.println("\n⚠️  Nenhuma operação foi realizada durante a sessão.");
+            return;
+        }
 
-        // 2. Montar a árvore: (2+5i) + (z * 3)
-        Expressao mult = new NoOperacao(noZ, no3, NoOperacao.Operador.MULTIPLICACAO);
-        Expressao arvore = new NoOperacao(noA, mult, NoOperacao.Operador.SOMA);
-
-        System.out.println("\n--- Árvore de Exemplo ---");
-        arvore.exibirArvore();
-
-        // Avaliar com z = 1+1i
-        Map<String, NumeroComplexo> variaveis = new HashMap<>();
-        variaveis.put("z", new NumeroComplexo(1, 1));
-        NumeroComplexo resultado = arvore.avaliar(variaveis);
-        System.out.println("\nResultado para z=(1+1i): " + resultado);
+        System.out.println("\n╔════════════════════════════════════════════╗");
+        System.out.println("║      Árvore de Operações da Sessão        ║");
+        System.out.println("╚════════════════════════════════════════════╝\n");
+        
+        arvoreOperacoes.exibirArvore();
     }
 
     private void exibirMenu() {
@@ -140,6 +154,13 @@ public class CalculadoraComplexaConsole {
         NumeroComplexo z1 = lerNumeroComplexo("Primeiro número (z1)");
         NumeroComplexo z2 = lerNumeroComplexo("Segundo número (z2)");
         NumeroComplexo resultado = z1.somar(z2);
+        
+        // Capturar na árvore de operações (acumula)
+        Expressao no1 = new NoConstante(z1);
+        Expressao no2 = new NoConstante(z2);
+        Expressao operacao = new NoOperacao(no1, no2, NoOperacao.Operador.SOMA);
+        acumularOperacao(operacao, resultado);
+        
         printf("\n✓ Resultado: (%s) + (%s) = %s\n", z1, z2, resultado);
     }
 
@@ -147,6 +168,13 @@ public class CalculadoraComplexaConsole {
         NumeroComplexo z1 = lerNumeroComplexo("Primeiro número (z1)");
         NumeroComplexo z2 = lerNumeroComplexo("Segundo número (z2)");
         NumeroComplexo resultado = z1.subtrair(z2);
+        
+        // Capturar na árvore de operações (acumula)
+        Expressao no1 = new NoConstante(z1);
+        Expressao no2 = new NoConstante(z2);
+        Expressao operacao = new NoOperacao(no1, no2, NoOperacao.Operador.SUBTRACAO);
+        acumularOperacao(operacao, resultado);
+        
         printf("\n✓ Resultado: (%s) - (%s) = %s\n", z1, z2, resultado);
     }
 
@@ -154,6 +182,13 @@ public class CalculadoraComplexaConsole {
         NumeroComplexo z1 = lerNumeroComplexo("Primeiro número (z1)");
         NumeroComplexo z2 = lerNumeroComplexo("Segundo número (z2)");
         NumeroComplexo resultado = z1.multiplicar(z2);
+        
+        // Capturar na árvore de operações (acumula)
+        Expressao no1 = new NoConstante(z1);
+        Expressao no2 = new NoConstante(z2);
+        Expressao operacao = new NoOperacao(no1, no2, NoOperacao.Operador.MULTIPLICACAO);
+        acumularOperacao(operacao, resultado);
+        
         printf("\n✓ Resultado: (%s) × (%s) = %s\n", z1, z2, resultado);
     }
 
@@ -162,6 +197,13 @@ public class CalculadoraComplexaConsole {
             NumeroComplexo z1 = lerNumeroComplexo("Dividendo (z1)");
             NumeroComplexo z2 = lerNumeroComplexo("Divisor (z2)");
             NumeroComplexo resultado = z1.dividir(z2);
+            
+            // Capturar na árvore de operações (acumula)
+            Expressao no1 = new NoConstante(z1);
+            Expressao no2 = new NoConstante(z2);
+            Expressao operacao = new NoOperacao(no1, no2, NoOperacao.Operador.DIVISAO);
+            acumularOperacao(operacao, resultado);
+            
             printf("\n✓ Resultado: (%s) ÷ (%s) = %s\n", z1, z2, resultado);
         } catch (ArithmeticException e) {
             System.out.printf("\n❌ Erro: %s\n", e.getMessage());
@@ -171,6 +213,12 @@ public class CalculadoraComplexaConsole {
     private void operacaoConjugado() {
         NumeroComplexo z = lerNumeroComplexo("Número");
         NumeroComplexo conjugado = z.getConjugado();
+        
+        // Capturar na árvore de operações (acumula)
+        Expressao noZ = new NoConstante(z);
+        Expressao operacao = new NoOperacao(noZ);
+        acumularOperacao(operacao, conjugado);
+        
         printf("\n✓ Conjugado de (%s) = %s\n", z, conjugado);
     }
 
@@ -178,6 +226,13 @@ public class CalculadoraComplexaConsole {
         NumeroComplexo z = lerNumeroComplexo("Número");
         int expoente = obterInteiro("Digite o expoente: ");
         NumeroComplexo resultado = z.potencia(expoente);
+        
+        // Capturar na árvore de operações (acumula)
+        Expressao noZ = new NoConstante(z);
+        Expressao noExpoente = new NoConstante(new NumeroComplexo(expoente, 0));
+        Expressao operacao = new NoOperacao(noZ, noExpoente, NoOperacao.Operador.POTENCIA);
+        acumularOperacao(operacao, resultado);
+        
         printf("\n✓ Resultado: (%s)^%d = %s\n", z, expoente, resultado);
     }
 
@@ -186,6 +241,12 @@ public class CalculadoraComplexaConsole {
             NumeroComplexo z = lerNumeroComplexo("Número");
             int indice = obterInteiro("Digite o índice da raiz: ");
             NumeroComplexo resultado = z.raiz(indice);
+            
+            // Capturar na árvore de operações (acumula)
+            Expressao noZ = new NoConstante(z);
+            Expressao operacao = new NoOperacao(noZ, indice);
+            acumularOperacao(operacao, resultado);
+            
             printf("\n✓ Resultado: Raiz %d de (%s) = %s\n", indice, z, resultado);
         } catch (IllegalArgumentException e) {
             System.out.printf("\n❌ Erro: %s\n", e.getMessage());
