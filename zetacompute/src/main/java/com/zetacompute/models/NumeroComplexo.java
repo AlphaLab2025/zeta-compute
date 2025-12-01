@@ -14,7 +14,7 @@ public final class NumeroComplexo {
 
 /*
      * Converte uma String (ex: "3", "4i", "3+4i", "3-4i") em um NumeroComplexo.
-     * Necessário para o parser ler a entrada do usuário.
+     * Necessário para o parser ler a entrada do usuario.
      */
     public static NumeroComplexo parse(String s) {
         s = s.replace(" ", ""); // Remove espaços
@@ -28,7 +28,7 @@ public final class NumeroComplexo {
         // que assume o formato a+bi ou a ou bi.
         try {
             if (s.endsWith("i")) {
-                // Tem parte imaginária
+                // Tem parte imaginária?
                 int posSinal = Math.max(s.lastIndexOf('+'), s.lastIndexOf('-'));
                 
                 if (posSinal <= 0) { // Apenas imaginário (ex: "4i", "-4i")

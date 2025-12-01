@@ -1,8 +1,11 @@
 package com.zetacompute.models;
 
 import com.zetacompute.models.NumeroComplexo;
+
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public class NoOperacao implements Expressao {
 
@@ -98,4 +101,43 @@ public class NoOperacao implements Expressao {
     public int hashCode() {
         return Objects.hash(esquerda, direita, operador, parametroAuxiliar);
     }
+
+    @Override
+    public Set<String> getVariaveis() {
+        Set<String> vars = new HashSet<>();
+        if (esquerda != null) vars.addAll(esquerda.getVariaveis());
+        if (direita != null) vars.addAll(direita.getVariaveis());
+        return vars;
+    }
+    @Override
+    public String toLisp() {
+        String opSimbolo = getSimboloLisp();
+        
+        if (direita == null) {
+            // Operação Unária: (OP FILHO) -> Ex: (conj 2+3i)
+            // Para raiz incluímos o grau: (root 2 exp)
+            if (operador == Operador.RAIZ) {
+                return "(" + opSimbolo + " " + parametroAuxiliar + " " + esquerda.toLisp() + ")";
+            }
+            return "(" + opSimbolo + " " + esquerda.toLisp() + ")";
+        } else {
+            // Operação Binária: (OP ESQ DIR) -> Ex: (+ 2 3)
+            return "(" + opSimbolo + " " + esquerda.toLisp() + " " + direita.toLisp() + ")";
+        }
+    }
+
+    // Método auxiliar para converter o ENUM em símbolo bonitinho
+    private String getSimboloLisp() {
+        switch (operador) {
+            case SOMA: return "+";
+            case SUBTRACAO: return "-";
+            case MULTIPLICACAO: return "*";
+            case DIVISAO: return "/";
+            case POTENCIA: return "^"; // ou "pow"
+            case RAIZ: return "root";
+            case CONJUGADO: return "conj";
+            default: return "?";
+        }
+    }
+
 }

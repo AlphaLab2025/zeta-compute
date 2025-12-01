@@ -1,8 +1,11 @@
 package com.zetacompute.models;
 
 import com.zetacompute.models.NumeroComplexo;
+
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public class NoVariavel implements Expressao {
     private final String nome;
@@ -43,4 +46,15 @@ public class NoVariavel implements Expressao {
     public int hashCode() {
         return Objects.hash(nome);
     }
+    @Override
+    public Set<String> getVariaveis() {
+        Set<String> s = new HashSet<>();
+        s.add(this.nome);
+        return s;
+    }
+    @Override
+    public String toLisp() {
+        return nome;
+    }
+
 }
