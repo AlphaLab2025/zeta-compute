@@ -16,7 +16,7 @@ public class NoVariavel implements Expressao {
 
     @Override
     public NumeroComplexo avaliar(Map<String, NumeroComplexo> variaveis) {
-        // Atender Requisito 5 (Detectar erros) Feito
+        // Atende Requisito 5 (Detectar erros)
         if (!variaveis.containsKey(nome)) {
             throw new IllegalArgumentException("Erro: Variável '" + nome + "' não foi definida.");
         }
@@ -33,7 +33,7 @@ public class NoVariavel implements Expressao {
         System.out.println(prefixo + (isLeft ? "├── " : "└── ") + "Var(" + nome + ")");
     }
 
-    // Verificar se duas variáveis são a mesma (Requisito 3) Feito
+    // Verifica se duas variáveis são a mesma (Requisito 3)
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
