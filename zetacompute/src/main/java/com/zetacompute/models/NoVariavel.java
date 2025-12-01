@@ -1,8 +1,11 @@
 package com.zetacompute.models;
 
 import com.zetacompute.models.NumeroComplexo;
+
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public class NoVariavel implements Expressao {
     private final String nome;
@@ -13,7 +16,7 @@ public class NoVariavel implements Expressao {
 
     @Override
     public NumeroComplexo avaliar(Map<String, NumeroComplexo> variaveis) {
-        // Atende Requisito 5 (Detectar erros)
+        // Atender Requisito 5 (Detectar erros) Feito
         if (!variaveis.containsKey(nome)) {
             throw new IllegalArgumentException("Erro: Variável '" + nome + "' não foi definida.");
         }
@@ -30,7 +33,7 @@ public class NoVariavel implements Expressao {
         System.out.println(prefixo + (isLeft ? "├── " : "└── ") + "Var(" + nome + ")");
     }
 
-    // Verifica se duas variáveis são a mesma (Requisito 3)
+    // Verificar se duas variáveis são a mesma (Requisito 3) Feito
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -43,4 +46,15 @@ public class NoVariavel implements Expressao {
     public int hashCode() {
         return Objects.hash(nome);
     }
+    @Override
+    public Set<String> getVariaveis() {
+        Set<String> s = new HashSet<>();
+        s.add(this.nome);
+        return s;
+    }
+    @Override
+    public String toLisp() {
+        return nome;
+    }
+
 }
