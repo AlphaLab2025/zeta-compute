@@ -92,6 +92,12 @@ public class parser {
             if (nome.equals("i")) {
                 x = new NoConstante(new NumeroComplexo(0, 1));
             }
+            if (comer('-')) {
+             // Truque: Representa "-x" como "0 - x" na árvore
+             Expressao zero = new NoConstante(new NumeroComplexo(0, 0));
+             Expressao proximo = parsePrimario(); 
+             return new NoOperacao(zero, proximo, NoOperacao.Operador.SUBTRACAO);
+        }
             // Verifica se é função
             else if (nome.equalsIgnoreCase("raiz")) {
                 if (!comer('('))
