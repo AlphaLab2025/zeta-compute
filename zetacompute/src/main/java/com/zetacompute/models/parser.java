@@ -4,12 +4,11 @@ public class parser {
 
     private String source;
     private int pos = -1;
-    private int ch; 
+    private int ch;
 
     public parser(String source) {
         this.source = source;
     }
-
 
     public Expressao parse() {
         proximoChar();
@@ -35,15 +34,21 @@ public class parser {
         return false;
     }
 
-    // --- Níveis do calculo  ---
+    // --- Níveis do calculo ---
 
     // Nível 1: Soma e Subtração (Menor prioridade)
     private Expressao parseExpressao() {
         Expressao x = parseTermo();
         for (;;) {
-            if (comer('+')) x = new NoOperacao(x, parseTermo(), NoOperacao.Operador.SOMA);
-            else if (comer('-')) x = new NoOperacao(x, parseTermo(), NoOperacao.Operador.SUBTRACAO);
-            else return x;
+            if (comer('+')){
+                x = new NoOperacao(x, parseTermo(), NoOperacao.Operador.SOMA);
+            }
+            else if (comer('-')){
+                x = new NoOperacao(x, parseTermo(), NoOperacao.Operador.SUBTRACAO);
+            }
+            else{
+                return x;
+            }
         }
     }
 
@@ -51,9 +56,15 @@ public class parser {
     private Expressao parseTermo() {
         Expressao x = parseFator();
         for (;;) {
-            if (comer('*')) x = new NoOperacao(x, parseFator(), NoOperacao.Operador.MULTIPLICACAO);
-            else if (comer('/')) x = new NoOperacao(x, parseFator(), NoOperacao.Operador.DIVISAO);
-            else return x;
+            if (comer('*')) {
+                x = new NoOperacao(x, parseFator(), NoOperacao.Operador.MULTIPLICACAO);
+            }
+            else if (comer('/')) {
+                x = new NoOperacao(x, parseFator(), NoOperacao.Operador.DIVISAO);
+            }
+            else{
+                return x;
+            }
         }
     }
 
@@ -68,56 +79,114 @@ public class parser {
 
     // Nível 4: Números, Variáveis, Parênteses e Funções (Maior prioridade)
     private Expressao parsePrimario() {
+
+        boolean negativo = false;
+
+        // captura + e -
+        if (comer('-')){
+            negativo = true;
+        }
+        else if (comer('+')){
+            negativo = false;
+        }
+
+        // Parênteses
         if (comer('(')) {
             Expressao x = parseExpressao();
-            if (!comer(')')) throw new IllegalArgumentException("Faltou fechar parênteses ')'");
+            if (!comer(')')){ 
+                throw new IllegalArgumentException("Faltou fechar parênteses ')'");
+            }
+            if (negativo) {
+                return new NoOperacao(new NoConstante(new NumeroComplexo(0, 0)), x, NoOperacao.Operador.SUBTRACAO);
+            }
             return x;
         }
 
-        // Funções: raiz(...) ou conj(...)
-        // Verifica se é uma palavra (variável ou função)
+        // Funções e variáveis
         if (Character.isLetter(ch)) {
             String nome = lerIdentificador();
-            
-            // Caso especial: 'i' isolado é um número complexo, não variável
+
+            // Caso especial: 'i' é imaginário
             if (nome.equals("i")) {
-                 return new NoConstante(new NumeroComplexo(0, 1));
+                Expressao x = new NoConstante(new NumeroComplexo(0, 1));
+                if (negativo){
+                    return new NoOperacao(new NoConstante(new NumeroComplexo(0, 0)), x, NoOperacao.Operador.SUBTRACAO);
+                }
+                return x;
             }
 
-            // Verifica se é função
+            // Função raiz(...)
             if (nome.equalsIgnoreCase("raiz")) {
-                if (!comer('(')) throw new IllegalArgumentException("Use raiz(expressao, grau)");
+                if (!comer('(')){
+                    throw new IllegalArgumentException("Use raiz(expressao, grau)");
+                }
                 Expressao exp = parseExpressao();
-                if (!comer(',')) throw new IllegalArgumentException("Use raiz(expressao, grau)");
-                // Ler o grau (inteiro simples)
-                String grauStr = lerNumero(); 
-                int grau = Integer.parseInt(grauStr); // Assume grau inteiro
-                if (!comer(')')) throw new IllegalArgumentException("Faltou ')' após raiz");
-                return new NoOperacao(exp, grau);
-            }
-            
-            if (nome.equalsIgnoreCase("conj")) {
-                if (!comer('(')) throw new IllegalArgumentException("Use conj(expressao)");
-                Expressao exp = parseExpressao();
-                if (!comer(')')) throw new IllegalArgumentException("Faltou ')' após conj");
-                return new NoOperacao(exp);
+                if (!comer(',')){
+                    throw new IllegalArgumentException("Use raiz(expressao, grau)");
+                }
+                String grauStr = lerNumero();
+                int grau = Integer.parseInt(grauStr);
+                if (!comer(')')){
+                    throw new IllegalArgumentException("Faltou ')' após raiz");
+                }
+
+                Expressao x = new NoOperacao(exp, grau); // mantive sua estrutura
+
+                if (negativo){
+                    return new NoOperacao(new NoConstante(new NumeroComplexo(0, 0)), x, NoOperacao.Operador.SUBTRACAO);
+                }
+                return x;
             }
 
-            // Se não for função nem 'i', é variável
-            return new NoVariavel(nome);
+            // Função conj(...)
+            if (nome.equalsIgnoreCase("conj")) {
+                if (!comer('(')){
+                    throw new IllegalArgumentException("Use conj(expressao)");
+                }
+                Expressao exp = parseExpressao();
+                if (!comer(')')){
+                    throw new IllegalArgumentException("Faltou ')' após conj");
+                }
+
+                Expressao x = new NoOperacao(exp); // mantive sua estrutura
+
+                if (negativo){
+                    return new NoOperacao(new NoConstante(new NumeroComplexo(0, 0)), x, NoOperacao.Operador.SUBTRACAO);
+                }
+                return x;
+            }
+
+            // Variável simples
+            Expressao x = new NoVariavel(nome);
+            if (negativo){
+                return new NoOperacao(new NoConstante(new NumeroComplexo(0, 0)), x, NoOperacao.Operador.SUBTRACAO);
+            }
+            return x;
         }
 
-        // Números (Reais ou Imaginários puros ex: 3, 4.5, 2i)
+        // Números
         if (Character.isDigit(ch) || ch == '.') {
             String numStr = lerNumero();
-            // Verifica se tem 'i' no final (ex: 3i)
+
+            // Imaginário tipo 3i
             if (ch == 'i') {
                 proximoChar();
                 double valor = Double.parseDouble(numStr);
-                return new NoConstante(new NumeroComplexo(0, valor));
+                Expressao x = new NoConstante(new NumeroComplexo(0, valor));
+                if (negativo){
+                    return new NoOperacao(new NoConstante(new NumeroComplexo(0, 0)), x, NoOperacao.Operador.SUBTRACAO);
+                }
+                return x;
             }
+
+            // Real puro
             double valor = Double.parseDouble(numStr);
-            return new NoConstante(new NumeroComplexo(valor, 0));
+            Expressao x = new NoConstante(new NumeroComplexo(valor, 0));
+
+            if (negativo){
+                return new NoOperacao(new NoConstante(new NumeroComplexo(0, 0)), x, NoOperacao.Operador.SUBTRACAO);
+            }
+            return x;
         }
 
         throw new IllegalArgumentException("Caractere inválido: " + (char) ch);
@@ -126,7 +195,7 @@ public class parser {
     // Métodos auxiliares de leitura de String
     private String lerIdentificador() {
         StringBuilder sb = new StringBuilder();
-        while (Character.isLetter(ch) || Character.isDigit(ch)) { 
+        while (Character.isLetter(ch) || Character.isDigit(ch)) {
             sb.append((char) ch);
             proximoChar();
         }
