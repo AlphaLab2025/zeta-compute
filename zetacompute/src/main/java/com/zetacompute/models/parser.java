@@ -68,9 +68,18 @@ public class parser {
 
     // Nível 4: Números, Variáveis, Parênteses e Funções (Maior prioridade)
     private Expressao parsePrimario() {
+        Expressao x;
+        int startPos = this.pos;
+
+        boolean negativo = comer('-');
+        if (comer('+')) {
+            negativo = false; // '+' sobrescreve '-'
+        }
+
         if (comer('(')) {
-            Expressao x = parseExpressao();
-            if (!comer(')')) throw new IllegalArgumentException("Faltou fechar parênteses ')'");
+            x = parseExpressao();
+            if (!comer(')'))
+                throw new IllegalArgumentException("Faltou fechar parênteses ')'");
             return x;
         }
 
@@ -78,52 +87,75 @@ public class parser {
         // Verifica se é uma palavra (variável ou função)
         if (Character.isLetter(ch)) {
             String nome = lerIdentificador();
-            
+
             // Caso especial: 'i' isolado é um número complexo, não variável
             if (nome.equals("i")) {
-                 return new NoConstante(new NumeroComplexo(0, 1));
+                x = new NoConstante(new NumeroComplexo(0, 1));
             }
-
             // Verifica se é função
-            if (nome.equalsIgnoreCase("raiz")) {
-                if (!comer('(')) throw new IllegalArgumentException("Use raiz(expressao, grau)");
+            else if (nome.equalsIgnoreCase("raiz")) {
+                if (!comer('('))
+                    throw new IllegalArgumentException("use raiz(expressao, grau)");
                 Expressao exp = parseExpressao();
-                if (!comer(',')) throw new IllegalArgumentException("Use raiz(expressao, grau)");
-                // Ler o grau (inteiro simples)
-                String grauStr = lerNumero(); 
-                int grau = Integer.parseInt(grauStr); // Assume grau inteiro
-                if (!comer(')')) throw new IllegalArgumentException("Faltou ')' após raiz");
-                return new NoOperacao(exp, grau);
-            }
-            
-            if (nome.equalsIgnoreCase("conj")) {
-                if (!comer('(')) throw new IllegalArgumentException("Use conj(expressao)");
-                Expressao exp = parseExpressao();
-                if (!comer(')')) throw new IllegalArgumentException("Faltou ')' após conj");
-                return new NoOperacao(exp);
+                if (!comer(','))
+                    throw new IllegalArgumentException("Use raiz(expressao, grau)");
+                
+                Expressao grauExp = parseExpressao();
+                if (!(grauExp instanceof NoConstante)) {
+                    throw new IllegalArgumentException("O grau da raiz deve ser uma constante numérica.");
+                }
+
+                NumeroComplexo complexoGrau = ((NoConstante) grauExp).avaliar(null);
+                if (Math.abs(complexoGrau.getImaginario()) > 1e-9) {
+                    throw new IllegalArgumentException("O grau da raiz deve ser um número real (imaginário=0).");
+                }
+                int grau = (int) Math.round(complexoGrau.getReal());
+
+                if (!comer(')'))
+                    throw new IllegalArgumentException("Faltou ')' após raiz");
+                x = new NoOperacao(exp, grau);
             }
 
-            // Se não for função nem 'i', é variável
-            return new NoVariavel(nome);
+            else if (nome.equalsIgnoreCase("conj")) {
+                if (!comer('('))
+                    throw new IllegalArgumentException("Uso incorreto da função conj: use conj(expressao)");
+                Expressao exp = parseExpressao();
+                if (!comer(')'))
+                    throw new IllegalArgumentException("Faltou ')' após conj");
+                x = new NoOperacao(exp);
+            }
+
+            else {
+                // Se não for função nem 'i', é variável
+                x = new NoVariavel(nome);
+            }
         }
 
         // Números (Reais ou Imaginários puros ex: 3, 4.5, 2i)
-        if (Character.isDigit(ch) || ch == '.') {
+        else if (Character.isDigit(ch) || ch == '.') {
+            pos = startPos;
+            ch = source.charAt(pos);
             String numStr = lerNumero();
-            // Verifica se tem 'i' no final (ex: 3i)
-            if (ch == 'i') {
-                proximoChar();
-                double valor = Double.parseDouble(numStr);
-                return new NoConstante(new NumeroComplexo(0, valor));
+            try {
+                x = new NoConstante(NumeroComplexo.parse(numStr));
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Formato de número complexo inválido na expressão: " + numStr);
             }
-            double valor = Double.parseDouble(numStr);
-            return new NoConstante(new NumeroComplexo(valor, 0));
         }
 
-        throw new IllegalArgumentException("Caractere inválido: " + (char) ch);
+        else {
+            if (ch == -1) {
+                throw new IllegalArgumentException("Expressão incompleta ou caractere inválido no final.");
+            }
+            throw new IllegalArgumentException("Caractere inválido: '" + (char) ch + "' na posição " + pos);
+        }
+
+        if (negativo) {
+            return new NoOperacao(new NoConstante(new NumeroComplexo(-1, 0)), x, NoOperacao.Operador.MULTIPLICACAO);
+        }
+        return x;
     }
 
-    // Métodos auxiliares de leitura de String
     private String lerIdentificador() {
         StringBuilder sb = new StringBuilder();
         while (Character.isLetter(ch) || Character.isDigit(ch)) { 
@@ -134,11 +166,32 @@ public class parser {
     }
 
     private String lerNumero() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();        
         while (Character.isDigit(ch) || ch == '.') {
             sb.append((char) ch);
             proximoChar();
         }
+
+        if (ch == 'i') {
+             sb.append((char) ch);
+             proximoChar();
+             return sb.toString();
+        }
+        
+        if (ch == '+' || ch == '-') {
+            sb.append((char) ch);
+            proximoChar();
+            
+            while (Character.isDigit(ch) || ch == '.') {
+                sb.append((char) ch);
+                proximoChar();
+            }
+            
+            if (ch == 'i') {
+                 sb.append((char) ch);
+                 proximoChar();
+            }
+        }        
         return sb.toString();
     }
 }
