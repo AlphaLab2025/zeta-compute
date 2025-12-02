@@ -24,7 +24,7 @@ public final class NumeroComplexo {
         if (s.equals("-i")) return new NumeroComplexo(0, -1);
 
         // Regex para separar partes. Ex: pega "-3", "+4i"
-        // Nota: Parsing de complexos é chato, esta é uma implementação simplificada
+        // Nota: Parsing de complexos é chato, esta é uma implementação simplificada melhorar futuramente
         // que assume o formato a+bi ou a ou bi.
         try {
             if (s.endsWith("i")) {
